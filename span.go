@@ -18,76 +18,10 @@
 
 package tracing
 
-import (
-	"time"
-)
-
 // SpanID identifies the span. It contains information that must be passed between services as part of the
 // instrumentation, e.g. in the form of HTTP headers or other protocol-specific data.
 type SpanID interface {
 	String() string
-}
-
-// ZipkinSpanID is a subtype of SpanID that can be exposed by Zipkin-compatible tracers.
-type ZipkinSpanID interface {
-	SpanID
-
-	// TraceID represents globally unique ID of the trace. Usually generated as a random number.
-	TraceID() int64
-
-	// ID represents span ID. It must be unique within a given trace, but does not have to be globally unique.
-	ID() int64
-
-	// ParentID refers to the ID of the parent span. Should be 0 if the current span is a root span.
-	ParentID() int64
-
-	// IsSampled returns whether this trace was chosen for permanent storage by the sampling mechanism of the tracer.
-	IsSampled() bool
-}
-
-// TimeOption can be used to provide externally captured time and duration to span methods, e.g. when recording
-// spans produced by a component that could not emit them directly to the tracer, such as a mobile application.
-type TimeOption struct {
-	// Timestamp of the event being recorded, such as start time of the span recorded externally.
-	// If nil, the tracer will capture the current time.  Microseconds precision.
-	Timestamp *time.Time
-}
-
-// BeginOptions contains optional flags that can be passed to BeginChildSpan().
-type BeginOptions struct {
-	TimeOption
-
-	// LocalComponent, marks the span as a local, in-process unit of work, such as a function call to a library.
-	// When this field is empty string, the span is considered to be an RPC span.
-	LocalComponent string
-
-	// Async marks the span as async, non-blocking, indicating that the parent continues doing other work.
-	// This can be used in calculation of a critical path through the trace.
-	// By default spans are considered sync/blocking.
-	Async bool
-
-	// Client identifies the client that sent the request causing creation of this (entry point) span.
-	Client *Endpoint
-
-	// Server can be used to identify the server that will be executing an RPC request represented
-	// by the new (child) span.
-	Server *Endpoint
-}
-
-// EndOptions contains optional flags that can be passed to EndSpan().
-type EndOptions struct {
-	// Duration of the span calculated externally. If not specified, the tracer will calculate it as endTs - startTs.
-	// Microseconds precision.
-	Duration *time.Duration
-
-	// Error indicates that span execution finished with an error. This can be used by the tracers to treat the span
-	// as an anomaly, rather than ignoring it, e.g. if it finished quickly.
-	Error error
-}
-
-// EventOptions contains optional flags that can be passed to AppendEvent().
-type EventOptions struct {
-	TimeOption
 }
 
 // Span represents a unit of work executed on behalf of a trace. Examples of spans include a remote procedure call,

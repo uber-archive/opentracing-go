@@ -45,18 +45,49 @@ func (t *noopTracer) BeginSpan(spanName string, service *Endpoint, sID SpanID, o
 	return &defaultSpan
 }
 
+// GetStringPickler implements GetStringPickler() of tracing.Tracer
 func (t *noopTracer) GetStringPickler() StringPickler {
 	return &defaultStringPicker
 }
 
+// Close implements Close() of tracing.Tracer
 func (t *noopTracer) Close() {
 	// nothing to do
 }
+
+// CreateSpanID implements CreateSpanID() of tracing.ZipkinCompatibleTracer
+func (t *noopTracer) CreateSpanID(traceID, spanID, parentID int64, flags byte) ZipkinSpanID {
+	return &defaultSpanID
+}
+
+// -----
 
 // String implements String() of tracing.SpanID
 func (s *noopSpanID) String() string {
 	return "tracing-disabled"
 }
+
+// TraceID implements TraceID of tracing.ZipkinSpanID
+func (s *noopSpanID) TraceID() int64 {
+	return 0
+}
+
+// ID implements ID of tracing.ZipkinSpanID
+func (s *noopSpanID) ID() int64 {
+	return 0
+}
+
+// ParentID implements ParentID of tracing.ZipkinSpanID
+func (s *noopSpanID) ParentID() int64 {
+	return 0
+}
+
+// IsSampled implements IsSampled of tracing.ZipkinSpanID
+func (s *noopSpanID) IsSampled() bool {
+	return false
+}
+
+// -----
 
 // SpanID implements SpanID() of tracing.Span
 func (s *noopSpan) SpanID() SpanID {
@@ -82,6 +113,8 @@ func (s *noopSpan) AddAttribute(name string, value interface{}) {
 func (s *noopSpan) AddEvent(name string, options *EventOptions) {
 	// noop
 }
+
+// -----
 
 // ToString implements ToString() of StringPickler
 func (p *noopStringPickler) ToString(spanID SpanID) string {

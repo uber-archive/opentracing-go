@@ -19,9 +19,10 @@
 package tracing_test
 
 import (
-	"code.uber.internal/infra/jaeger-client-go"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/uber-common/opentracing-go"
 )
 
 type tracerSuite struct {
@@ -40,6 +41,13 @@ func (s *tracerSuite) SetupTest() {
 
 func (s *tracerSuite) TearDownSuite() {
 	s.tracer = nil
+}
+
+func (s *tracerSuite) TestTracer() {
+	id := s.tracer.(tracing.ZipkinCompatibleTracer).CreateSpanID(1, 2, 0, 0)
+	s.EqualValues(0, id.TraceID())
+	s.EqualValues(0, id.ID())
+	s.EqualValues(0, id.ParentID())
 }
 
 func (s *tracerSuite) TestRootSpan() {
@@ -72,4 +80,11 @@ func (s *tracerSuite) TestClientSpan() {
 	child.End(nil)
 
 	span.End(nil)
+}
+
+func (s *tracerSuite) TestUtil() {
+	var endpoint = &tracing.Endpoint{ServiceName:"my-service", IPv4: 123, Port: 1000}
+	span, err := tracing.GetSpanFromHeader("", s.tracer, "test-span", endpoint, nil)
+	s.NoError(err)
+	s.NotNil(span)
 }

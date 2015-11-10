@@ -61,12 +61,3 @@ type StringPickler interface {
 	// FromString deserialized a span ID from a string, or returns an error if the string value is malformed
 	FromString(value string) (SpanID, error)
 }
-
-// ZipkinCompatibleTracer is a tracer that represents trace ID as a 4-tuple similar to Zipkin.
-type ZipkinCompatibleTracer interface {
-	// CreateSpanID instantiates ZipkinSpanID from 4 values. It is not meant for creating brand new IDs
-	// externally, but for constructing an ID based on the 4 values read from the incoming request.
-	// For example, TChannel protocol explicitly records these 4 values in its frame, so one cannot use
-	// a more abstract factory like StringPickler.
-	CreateSpanID(traceID, spanID, parentID int64, flags byte) ZipkinSpanID
-}
