@@ -60,7 +60,7 @@ func processRequest(ctx net.Context, ...) {
 }
 ```
 
-== Zipkin Trace ID
+## Zipkin Trace ID
 
 When RPC calls happen over a protocol that supports arbitrary string headers, the propagation of trace ID between
 services can be done using `StringPickler` as shown in the previous section.  However, some protocols like 
@@ -75,7 +75,8 @@ var span Span
 if frame.tracing == nil {
     span = tracer.BeginRootSpan(...)
 } else {
-    spanID := tracer.(ZipkinCompatibleTracer).CreateSpanID(...) // pass values from frame.tracing
+    spanID := tracer.(ZipkinCompatibleTracer).CreateSpanID(frame.tracing.traceID, frame.tracing.ID,
+                                                           frame.tracing.parentID, frame.tracing.flags)
     span := tracer.BeginSpan(... spanID ...)
 }
 ```
