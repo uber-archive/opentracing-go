@@ -73,12 +73,12 @@ via this format. If it is compatible, it can implement two additional interfaces
 ```go
 var span Span
 zipkinTracer, zipkinOK := tracer.(ZipkinCompatibleTracer)
-if frame.tracing == nil || !zipkinOK {
-    span = tracer.BeginRootSpan(...)
-} else {
+if frame.tracing != nil && zipkinOK {
     spanID := zipkinTracer.CreateSpanID(frame.tracing.traceID, frame.tracing.ID,
                                         frame.tracing.parentID, frame.tracing.flags)
     span := tracer.BeginSpan(... spanID ...)
+} else {
+    span = tracer.BeginRootSpan(...)
 }
 ```
 
