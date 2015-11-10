@@ -92,3 +92,7 @@ if spanID, ok := childSpan.SpanID().(ZipkinSpanID); ok {
 }
 ...
 ```
+
+## License
+
+`opentracing-go` is available under the MIT license. See the LICENSE file for more info.
