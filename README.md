@@ -72,11 +72,12 @@ via this format. If it is compatible, it can implement two additional interfaces
 
 ```go
 var span Span
-if frame.tracing == nil {
+zipkinTracer, zipkinOK := tracer.(ZipkinCompatibleTracer)
+if frame.tracing == nil || !zipkinOK {
     span = tracer.BeginRootSpan(...)
 } else {
-    spanID := tracer.(ZipkinCompatibleTracer).CreateSpanID(frame.tracing.traceID, frame.tracing.ID,
-                                                           frame.tracing.parentID, frame.tracing.flags)
+    spanID := zipkinTracer.CreateSpanID(frame.tracing.traceID, frame.tracing.ID,
+                                        frame.tracing.parentID, frame.tracing.flags)
     span := tracer.BeginSpan(... spanID ...)
 }
 ```
@@ -84,9 +85,10 @@ if frame.tracing == nil {
 And when making an outgoing RPC call, it can serialize span ID:
 
 ```go
-spanID := childSpan.SpanID().(ZipkinSpanID)
-outFrame.traceID = spanID.TraceID()
-outFrame.ID = spanID.ID()
-outFrame.parentID = spanID.ParentID()
+if spanID, ok := childSpan.SpanID().(ZipkinSpanID); ok {
+    outFrame.traceID = spanID.TraceID()
+    outFrame.ID = spanID.ID()
+    outFrame.parentID = spanID.ParentID()
+}
 ...
 ```
