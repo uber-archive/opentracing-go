@@ -28,6 +28,11 @@ func (h *myHandler) handler(w http.ResponseWriter, r *http.Request) {
         span = tracer.BeginRootSpan(spanName, endpoint, options)
     }
 
+    // You may annotate your span with events (timestamped) or attributes.  UI can find this trace 
+    // via one of these case-insensitive queries: "api-version=1.2", "api-version", "i-got-hit".
+    span.AddEvent("I-got-hit", nil)
+    span.AddAttribute("api-version", "1.2")
+    
     // propagation - store span in the context
     ctx.Store("tracing.current_span", span)
 
