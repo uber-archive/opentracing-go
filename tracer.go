@@ -20,18 +20,18 @@ package tracing
 
 // Tracer is the entry point API between instrumentation code and the tracing implementation.
 type Tracer interface {
-	// BeginRootSpan starts a new trace and creates a new root span.
+	// BeginTrace starts a new trace and creates a new root span.
 	// Used by any service that is instrumented for tracing, but did not receive trace ID from upstream.
 	// The spanName should reflect the server's name of the end-point that received the request.
 	// The domain of names must be limited, do not use UUIDs or entity IDs or timestamps as part of the name.
 	// The service endpoint is mandatory.
-	BeginRootSpan(spanName string, service *Endpoint, options *BeginOptions) Span
+	BeginTrace(spanName string, service *Endpoint, options *BeginOptions) Span
 
-	// BeginSpan resumes a trace started elsewhere and creates a span with the specified ID.
+	// JoinTrace joins a trace started elsewhere and creates a span with the specified ID.
 	// Used by services that receive trace ID from upstream.
 	// The name should reflect the server's name of the end-point that received the request.
 	// The domain of names must be limited, do not use UUIDs or entity IDs or timestamps as part of the name.
-	BeginSpan(spanName string, service *Endpoint, spanID SpanID, options *BeginOptions) Span
+	JoinTrace(spanName string, service *Endpoint, spanID SpanID, options *BeginOptions) Span
 
 	// GetStringPickler returns a pickler that can marshal SpanID to/from a string.
 	// It can be used when transmitting SpanID across processes in a string protocol, e.g. in HTTP header.

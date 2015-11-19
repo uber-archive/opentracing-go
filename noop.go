@@ -18,6 +18,8 @@
 
 package tracing
 
+import "errors"
+
 type noopTracer struct{}
 type noopSpan struct{}
 type noopSpanID struct{}
@@ -28,6 +30,7 @@ var (
 	defaultSpan         noopSpan
 	defaultSpanID       noopSpanID
 	defaultStringPicker noopStringPickler
+	invalidTraceIDError = errors.New("Invalid trace ID")
 )
 
 // NewNoopTracer creates a tracer that does not perform any tracing
@@ -35,13 +38,13 @@ func NewNoopTracer() Tracer {
 	return &defaultTracer
 }
 
-// BeginRootSpan implements BeginRootSpan() of tracing.Tracer
-func (t *noopTracer) BeginRootSpan(spanName string, service *Endpoint, options *BeginOptions) Span {
+// BeginTrace implements BeginTrace() of tracing.Tracer
+func (t *noopTracer) BeginTrace(spanName string, service *Endpoint, options *BeginOptions) Span {
 	return &defaultSpan
 }
 
-// BeginSpan implements BeginSpan() of tracing.Tracer.
-func (t *noopTracer) BeginSpan(spanName string, service *Endpoint, sID SpanID, options *BeginOptions) Span {
+// JoinTrace implements JoinTrace() of tracing.Tracer.
+func (t *noopTracer) JoinTrace(spanName string, service *Endpoint, sID SpanID, options *BeginOptions) Span {
 	return &defaultSpan
 }
 
@@ -118,10 +121,16 @@ func (s *noopSpan) AddEvent(name string, options *EventOptions) {
 
 // ToString implements ToString() of StringPickler
 func (p *noopStringPickler) ToString(spanID SpanID) string {
-	return ""
+	return "x"
 }
 
 // FromString implements FromString() of StringPickler
 func (p *noopStringPickler) FromString(value string) (SpanID, error) {
-	return &defaultSpanID, nil
+	if value == "x" {
+		return &defaultSpanID, nil
+	} else if value == "error" {
+		return nil, invalidTraceIDError
+	} else {
+		return nil, nil
+	}
 }

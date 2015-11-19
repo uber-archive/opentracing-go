@@ -6,8 +6,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -48,10 +50,11 @@ func (s *tracerSuite) TestTracer() {
 	s.EqualValues(0, id.TraceID())
 	s.EqualValues(0, id.ID())
 	s.EqualValues(0, id.ParentID())
+	s.False(id.IsSampled())
 }
 
 func (s *tracerSuite) TestRootSpan() {
-	span := s.tracer.BeginRootSpan("test", nil, nil)
+	span := s.tracer.BeginTrace("test", nil, nil)
 	s.NotNil(span.SpanID())
 
 	span.AddAttribute("key", "value")
@@ -63,16 +66,21 @@ func (s *tracerSuite) TestServerSpan() {
 	pickler := s.tracer.GetStringPickler()
 	spanID, err := pickler.FromString("")
 	s.NoError(err)
+	s.Nil(spanID)
+	spanID, err = pickler.FromString("error")
+	s.Error(err)
+	spanID, err = pickler.FromString("x")
+	s.NoError(err)
 	s.Equal("tracing-disabled", spanID.String())
-	s.Equal("", pickler.ToString(spanID))
+	s.Equal("x", pickler.ToString(spanID))
 
-	span := s.tracer.BeginSpan("test", nil, spanID, nil)
+	span := s.tracer.JoinTrace("test", nil, spanID, nil)
 	s.Equal(spanID, span.SpanID())
 	span.End(nil)
 }
 
 func (s *tracerSuite) TestClientSpan() {
-	span := s.tracer.BeginRootSpan("test", nil, nil)
+	span := s.tracer.BeginTrace("test", nil, nil)
 	s.NotNil(span.SpanID())
 
 	child := span.BeginChildSpan("child", nil)
@@ -83,7 +91,7 @@ func (s *tracerSuite) TestClientSpan() {
 }
 
 func (s *tracerSuite) TestUtil() {
-	var endpoint = &tracing.Endpoint{ServiceName:"my-service", IPv4: 123, Port: 1000}
+	var endpoint = &tracing.Endpoint{ServiceName: "my-service", IPv4: 123, Port: 1000}
 	span, err := tracing.GetSpanFromHeader("", s.tracer, "test-span", endpoint, nil)
 	s.NoError(err)
 	s.NotNil(span)

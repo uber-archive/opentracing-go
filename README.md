@@ -12,21 +12,21 @@ Assume you implement an http server that calls some other service while executin
 // Initialize global Tracer variable
 var tracer = tracing.NewNoopTracer()
 
-// Initialize Endpoint descriptor of your service
-var endpoint = &tracing.Endpoint{ServiceName:"my-service", IPv4: ..., Port: 1000}
+// Initialize Endpoint descriptor of your service (use real IP address)
+var endpoint = &tracing.Endpoint{ServiceName:"my-service", IPv4: 127<<24|1, Port: 1000}
 
 // In the http handler function
-func (h *myHandler) handler(w http.ResponseWriter, r *http.Request) {
+func (h *myHandler) handler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
     // instrumentation code
     spanName := urlToSpanName(r)
     client := makeEndpoint(r.RemoteAddr, r.Header.Get("Requestor"))
     header := r.Header.Get("X-Tracing")
     options := &tracing.BeginOptions{Peer: client}
     // call util method to create new trace or join the existing trace
-    span, err := GetSpanFromHeader(header, tracer, spanName, endpoint, options)
+    span, err := tracing.GetSpanFromHeader(header, tracer, spanName, endpoint, options)
     if err != nil {
         // header could not be parsed, but we may still decide to create a new trace
-        span = tracer.BeginRootSpan(spanName, endpoint, options)
+        span = tracer.BeginTrace(spanName, endpoint, options)
     }
 
     // You may annotate your span with events (timestamped) or attributes.  UI can find this trace 
@@ -35,22 +35,22 @@ func (h *myHandler) handler(w http.ResponseWriter, r *http.Request) {
     span.AddAttribute("api-version", "1.2")
     
     // propagation - store span in the context
-    ctx.Store("tracing.current_span", span)
+    newCtx = tracing.ContextWithSpan(span)
 
     // continue with the regular handler
-    processRequest(ctx, r)
+    processRequest(newCtx, w, r)
 
-    // once finished, close the span
+    // once finished, close the span.
     span.End(nil)
 }
 ```
 
-Somewhere in `processRequest()` you need to make a call to another service
+Suppose somewhere in `processRequest()` you need to make a call to another service
 
 ```go
-func processRequest(ctx net.Context, ...) {
-    // retrieve the span
-    span := GetCurrentSpan(ctx)
+func processRequest(ctx context.Context, ...) {
+    // retrieve the span from the context
+    span, err := tracing.GetSpanFromContext(ctx)
     
     // start a new RPC span
     options := &tracing.BeginOptions{Peer: ...}
@@ -82,9 +82,9 @@ zipkinTracer, zipkinOK := tracer.(ZipkinCompatibleTracer)
 if frame.tracing != nil && zipkinOK {
     spanID := zipkinTracer.CreateSpanID(frame.tracing.traceID, frame.tracing.ID,
                                         frame.tracing.parentID, frame.tracing.flags)
-    span := tracer.BeginSpan(... spanID ...)
+    span := tracer.JoinTrace(... spanID ...)
 } else {
-    span = tracer.BeginRootSpan(...)
+    span = tracer.BeginTrace(...)
 }
 ```
 
@@ -102,3 +102,7 @@ if spanID, ok := childSpan.SpanID().(ZipkinSpanID); ok {
 ## License
 
 `opentracing-go` is available under the MIT license. See the LICENSE file for more info.
+
+## Tests
+
+`gocov test -v | gocov report`
