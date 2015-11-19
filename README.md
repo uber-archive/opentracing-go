@@ -22,9 +22,10 @@ func (h *myHandler) handler(w http.ResponseWriter, r *http.Request) {
     client := makeEndpoint(r.RemoteAddr, r.Header.Get("Requestor"))
     header := r.Header.Get("X-Tracing")
     options := &tracing.BeginOptions{Peer: client}
+    // call util method to create new trace or join the existing trace
     span, err := GetSpanFromHeader(header, tracer, spanName, endpoint, options)
     if err != nil {
-        // may decide to still create a new span
+        // header could not be parsed, but we may still decide to create a new trace
         span = tracer.BeginRootSpan(spanName, endpoint, options)
     }
 
