@@ -1,3 +1,5 @@
+# NOTE: this project has been deprecated and superseded by https://github.com/opentracing/opentracing-go.
+
 ## Synopsis
 
 Defines an interface for Uber libraries to use when reporting Dapper/Zipkin-style tracing information to distributed 
